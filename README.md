@@ -1,75 +1,383 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="remember-new-logo-complete-white.svg">
   <source media="(prefers-color-scheme: light)" srcset="remember-new-logo-complete-black.svg">
-  <img alt="GitHub Copilot Memory Tool" src="https://raw.githubusercontent.com/NiclasOlofsson/mode-manager-mcp/refs/heads/main/remember-new-logo-complete-black.svg" width="800">
+  <img alt="Mode Manager MCP - GitHub Copilot Prompt Management" src="https://raw.githubusercontent.com/NiclasOlofsson/mode-manager-mcp/refs/heads/main/remember-new-logo-complete-black.svg" width="800">
 </picture>
 
 
-# Meet #remember -- Real Memory for You, Your Team, and Your AI
+# Mode Manager MCP - Complete Copilot Customization & Memory System
 
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D)
 [![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D&quality=insiders)
 &nbsp;&nbsp;&nbsp;&nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-Mode Manager MCP is an AI-powered memory and context system for developers and teams. It lets you and your team “remember” important facts, preferences, and best practices—so your AI assistant always has the right context, and your team’s knowledge is never lost.
+**Mode Manager MCP** is a comprehensive MCP (Model Context Protocol) server that provides complete management of GitHub Copilot customization files in VS Code. It combines persistent AI memory, chatmode management, instruction files, and a curated library system—all accessible through natural language or dedicated tools.
 
-With Mode Manager MCP, you can:
-- Instantly store and retrieve personal, team, and language-specific knowledge.
-- Share onboarding notes, coding conventions, and project wisdom—right where you work.
-- Make your AI assistant smarter, more helpful, and always in sync with your workflow.
+## What Does This Tool Actually Do?
 
-## Why “Remember”? (Features & Benefits)
+Mode Manager MCP gives you full control over your Copilot experience by managing three types of customization files:
 
-- **Personal AI Memory:** Instantly store preferences, facts, and reminders for yourself—your AI assistant will always know your context.
-- **Workspace (Team) Memory:** Share best practices, onboarding notes, and team knowledge directly in the repo. New team members ramp up faster, and everyone stays on the same page.
-- **Language-Specific Memory:** Save and retrieve language-specific tips and conventions. Your assistant adapts to each language’s best practices automatically.
-- **Natural Language Simplicity:** Just say “remember…”—no config files, no YAML, no technical hurdles.
-- **Smarter Coding, Fewer Repeated Questions:** Your team’s memory grows over time, reducing repeated questions and ensuring consistent practices.
+1. **`.instructions.md` files** - Define custom instructions, memory, and context for Copilot
+2. **`.chatmode.md` files** - Create specialized modes for different tasks (e.g., "Beast Mode", "Architect Mode")
+3. **Library access** - Browse and install curated prompts and chatmodes from the community
 
-&nbsp;  
->&nbsp;  
-> **Before this tool**  
-> *"Hey Copilot, write me a Python function..."*  
-> Copilot: *Gives generic Python code*
->
-> **After using `remember`**  
-> You: *"Remember I'm a senior data architect at Oatly, prefer type hints, and use Black formatting"*  
-> Next conversation: *"Write me a Python function..."*  
-> Copilot: *Generates perfectly styled code with type hints, following your exact preferences*  
->&nbsp;  
+### Core Capabilities
 
-**Ready to have Copilot that actually remembers you? [Get started now!](#get-it-running-2-minutes)**
+- 🧠 **Persistent Memory System** - Store personal, workspace, and language-specific memories
+- 🎯 **Chatmode Management** - Create, update, and switch between specialized Copilot modes
+- 📝 **Instruction Files** - Manage custom instructions and AI guidance
+- 📚 **Library Integration** - Browse and install from a curated library of prompts
+- 🔄 **Memory Optimization** - AI-powered consolidation of memory entries
+- 🔒 **Scope Control** - User-level (personal) and workspace-level (team) memory
+- 🌐 **Language-Specific** - Automatic context switching based on programming language
 
-## Real-World Examples: Just Say It!
+## Architecture & Data Flow
 
-You don’t need special syntax—just talk to Copilot naturally. Mode Manager MCP is extremely relaxed about how you phrase things. 
-If it sounds like something you want remembered, it will be!
+### System Architecture Diagram
 
->&nbsp;  
->**Personal memory**  
-> You: *I like detailed docstrings and use pytest for testing.
-> (Copilot, keep that in mind.)*  
->
-> ---  
->**Team memory**  
-> You: *We alw&nbsp;ays use the Oatly data pipeline template and follow our naming conventions.
-> (Let’s make sure everyone remembers that.)*
->
-> ---  
->**Language-specific memory**
-> You: *For Python, use type hints and Black formatting.
-> In C#, always use nullable reference types.*  
->&nbsp;  
+```mermaid
+graph TB
+    subgraph "VS Code GitHub Copilot"
+        Copilot[GitHub Copilot Chat]
+    end
+    
+    subgraph "Mode Manager MCP Server"
+        MCP[FastMCP Server]
+        
+        subgraph "Core Managers"
+            IM[Instruction Manager]
+            CM[Chatmode Manager]
+            LM[Library Manager]
+            MO[Memory Optimizer]
+        end
+        
+        subgraph "Tools & APIs"
+            RT[Remember Tools]
+            CT[Chatmode Tools]
+            IT[Instruction Tools]
+            LT[Library Tools]
+            MT[Memory Tools]
+        end
+        
+        MCP --> IM
+        MCP --> CM
+        MCP --> LM
+        MCP --> MO
+        
+        RT --> IM
+        CT --> CM
+        IT --> IM
+        LT --> LM
+        MT --> MO
+    end
+    
+    subgraph "File System Storage"
+        subgraph "User Prompts Directory"
+            UIF[memory.instructions.md]
+            UCF[*.chatmode.md]
+            ULF[memory-python.instructions.md]
+        end
+        
+        subgraph "Workspace (.github/instructions)"
+            WIF[memory.instructions.md]
+            WLF[memory-*.instructions.md]
+        end
+        
+        subgraph "Online Library"
+            LIB[GitHub Library JSON]
+        end
+    end
+    
+    Copilot <-->|MCP Protocol| MCP
+    
+    IM -->|Read/Write| UIF
+    IM -->|Read/Write| WIF
+    IM -->|Read/Write| ULF
+    IM -->|Read/Write| WLF
+    
+    CM -->|Read/Write| UCF
+    
+    LM -->|Fetch| LIB
+    LM -->|Install| UIF
+    LM -->|Install| UCF
+    
+    MO -->|Optimize| UIF
+    MO -->|Optimize| WIF
+
+    style MCP fill:#0098FF
+    style IM fill:#4CAF50
+    style CM fill:#FF9800
+    style LM fill:#9C27B0
+    style MO fill:#F44336
+```
+
+### Data Flow: Input → Processing → Output
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                          INPUT SOURCES                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. User Commands (via GitHub Copilot Chat)                         │
+│     • "Remember that I prefer detailed docstrings"                   │
+│     • "Install Beast Mode from the library"                          │
+│     • "List my chatmodes"                                            │
+│     • "Optimize my memory"                                           │
+│                                                                       │
+│  2. Direct Tool Calls (from MCP clients)                            │
+│     • remember(memory_item="...")                                    │
+│     • list_chatmodes()                                               │
+│     • install_from_library(item_name="...")                          │
+│     • optimize_memory()                                              │
+│                                                                       │
+│  3. VS Code Context                                                  │
+│     • Current workspace root                                         │
+│     • Active file language                                           │
+│     • User prompts directory path                                    │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PROCESSING PIPELINE                               │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ 1. Request Routing (FastMCP Server)                          │  │
+│  │    • Parse tool name and parameters                          │  │
+│  │    • Validate permissions (read-only check)                  │  │
+│  │    • Apply middleware (logging, timing, rate limiting)       │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                  │                                   │
+│                                  ▼                                   │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ 2. Manager Selection & Execution                             │  │
+│  │                                                               │  │
+│  │    ┌─────────────────────────────────────────────────────┐  │  │
+│  │    │ Memory Operations (Instruction Manager)             │  │  │
+│  │    │  • Detect scope (user/workspace)                    │  │  │
+│  │    │  • Detect language context                          │  │  │
+│  │    │  • Create/append to memory files                    │  │  │
+│  │    │  • Trigger optimization if needed                   │  │  │
+│  │    └─────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │    ┌─────────────────────────────────────────────────────┐  │  │
+│  │    │ Chatmode Operations (Chatmode Manager)              │  │  │
+│  │    │  • CRUD operations on .chatmode.md files            │  │  │
+│  │    │  • Parse/write frontmatter and content              │  │  │
+│  │    │  • Update from source URLs                          │  │  │
+│  │    └─────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │    ┌─────────────────────────────────────────────────────┐  │  │
+│  │    │ Library Operations (Library Manager)                │  │  │
+│  │    │  • Fetch library JSON from GitHub                   │  │  │
+│  │    │  • Parse and filter items                           │  │  │
+│  │    │  • Download and install items                       │  │  │
+│  │    └─────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │    ┌─────────────────────────────────────────────────────┐  │  │
+│  │    │ Memory Optimization (Memory Optimizer)              │  │  │
+│  │    │  • Check optimization criteria                      │  │  │
+│  │    │  • Use AI sampling for consolidation               │  │  │
+│  │    │  • Create backups before changes                    │  │  │
+│  │    │  • Update optimization metadata                     │  │  │
+│  │    └─────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                  │                                   │
+│                                  ▼                                   │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ 3. File System Operations                                    │  │
+│  │    • Read/parse frontmatter YAML + Markdown content          │  │
+│  │    • Create automatic backups (.backup suffix)               │  │
+│  │    • Write files with proper formatting                      │  │
+│  │    • Apply timestamps to memory entries                      │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                          OUTPUT RESULTS                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                       │
+│  1. File System Changes                                              │
+│     • .instructions.md files (user & workspace directories)          │
+│     • .chatmode.md files (user prompts directory)                    │
+│     • .backup files (safety copies)                                  │
+│     • YAML frontmatter + Markdown content format                     │
+│                                                                       │
+│  2. Response to Copilot/User                                         │
+│     • Success/error messages                                         │
+│     • File paths and locations                                       │
+│     • Statistics (entries, file size, etc.)                          │
+│     • Formatted lists of items                                       │
+│                                                                       │
+│  3. VS Code Integration                                              │
+│     • Files automatically loaded by Copilot on each chat turn        │
+│     • Language-specific context via applyTo patterns                 │
+│     • Workspace context via .github/instructions                     │
+│                                                                       │
+│  4. Logs & Monitoring                                                │
+│     • Debug logs (stderr + temp file)                                │
+│     • Middleware metrics (timing, rate limits)                       │
+│     • Operation confirmations                                        │
+│                                                                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Example Data Flow: "Remember" Command
+
+```
+User Input: "Remember that I prefer snake_case for Python variables"
+     │
+     ▼
+[FastMCP Server] Receives tool call: remember(memory_item="...", scope="user")
+     │
+     ▼
+[Scope Detection] Analyzes text → detects "I prefer" → user scope
+     │
+     ▼
+[Language Detection] No explicit language → defaults to general memory
+     │
+     ▼
+[Instruction Manager] Creates/opens: ~/.vscode/prompts/memory.instructions.md
+     │
+     ▼
+[File Operations]
+     ├─ Check if file exists → No → Create with YAML frontmatter
+     │     ---
+     │     applyTo: '**'
+     │     description: Personal AI memory for conversations and preferences
+     │     ---
+     │     # Personal AI Memory
+     │     ## Memories
+     │
+     ├─ Append new entry with timestamp:
+     │     - **2025-12-08 23:15:** I prefer snake_case for Python variables
+     │
+     └─ Write to disk
+     │
+     ▼
+[Memory Optimizer] Check if optimization needed
+     ├─ File size < threshold → Skip
+     └─ Entry count < threshold → Skip
+     │
+     ▼
+[Response] "Remembered: I prefer snake_case for Python variables
+            Stored in global memory.
+            File: memory.instructions.md
+            This memory will be available to AI assistants..."
+     │
+     ▼
+[VS Code] On next Copilot chat turn, automatically loads memory.instructions.md
+          Copilot now has context about your snake_case preference
+```
+
+## Core Features Explained
+
+### 1. Persistent Memory System (`remember` tool)
+
+Store information that persists across Copilot sessions with automatic scope detection:
+
+**Personal Memory** (User-level):
+```
+User: "Remember I prefer detailed docstrings"
+→ Stores in ~/.vscode/prompts/memory.instructions.md
+→ Available in ALL your projects
+```
+
+**Workspace Memory** (Team-level):
+```
+User: "Remember this project uses PostgreSQL v14"
+→ Stores in <workspace>/.github/instructions/memory.instructions.md
+→ Available to ALL team members in this repo
+```
+
+**Language-Specific Memory**:
+```
+User: "For Python, always use type hints"
+→ Stores in memory-python.instructions.md
+→ Only loaded when working with Python files
+```
+
+### 2. Chatmode Management
+
+Create specialized modes that transform Copilot's behavior:
+
+- **Create custom chatmodes**: Define tools, behavior, and context
+- **Switch between modes**: "Architect Mode", "Beast Mode", "Debug Mode", etc.
+- **Update from source**: Refresh chatmodes while preserving local customizations
+- **Full CRUD operations**: List, read, update, delete chatmode files
+
+### 3. Instruction File Management
+
+Beyond memory, manage any custom instructions:
+
+- Create standalone instruction files
+- Organize by purpose, project, or team
+- Control when instructions apply via `applyTo` patterns
+- Update and version control instruction files
+
+### 4. Library System
+
+Access a curated collection of professional prompts:
+
+- **Browse library**: See available chatmodes and instructions
+- **Install items**: One command to add curated content
+- **Update items**: Refresh from library while keeping customizations
+- **Community contributions**: Share your best prompts
+
+### 5. Memory Optimization
+
+AI-powered consolidation keeps memory files efficient:
+
+- **Automatic triggers**: Based on size, entry count, or time
+- **Smart consolidation**: AI analyzes and reorganizes memories
+- **Preserves information**: No data loss during optimization
+- **Configurable**: Adjust thresholds and behavior
+- **Manual control**: Force optimization or check statistics
+
+## Available Tools
+
+The MCP server exposes these tools to Copilot and other MCP clients:
+
+### Memory Tools
+- `remember(memory_item, scope?, language?)` - Store persistent memory
+- `optimize_memory(memory_file?, force?)` - Optimize memory file
+- `memory_stats(memory_file?)` - Get memory file statistics
+- `configure_memory_optimization(...)` - Configure auto-optimization
+
+### Instruction Tools
+- `create_instruction(name, description, content)` - Create instruction file
+- `list_instructions(scope?)` - List all instructions
+- `get_instruction(name, scope?)` - Read instruction content
+- `update_instruction(name, frontmatter?, content?)` - Update instruction
+- `delete_instruction(name)` - Delete instruction
+
+### Chatmode Tools
+- `create_chatmode(filename, description, content, tools?)` - Create chatmode
+- `list_chatmodes()` - List all chatmodes
+- `get_chatmode(filename)` - Read chatmode content
+- `update_chatmode(filename, frontmatter?, content?)` - Update chatmode
+- `delete_chatmode(filename)` - Delete chatmode
+- `update_chatmode_from_source(filename)` - Refresh from source URL
+
+### Library Tools
+- `list_library_items(type?)` - Browse library
+- `search_library(query)` - Search library items
+- `get_library_item(name)` - Get item details
+- `install_from_library(name, type?)` - Install library item
 
 ## Get It Running (2 Minutes)
 
-*If you don't even have `python`, you need to install that first. You can get it at [python.org/downloads](https://www.python.org/downloads/)*
+*If you don't have `python`, install it from [python.org/downloads](https://www.python.org/downloads/)*
 
 ### 1. Install pipx from PyPI
 ```bash
 pip install pipx
 ```
+
 ### 2. Click on the badge for your VS Code
 
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D)
@@ -93,21 +401,19 @@ Add this to your VS Code MCP settings (`mcp.json`):
 }
 ```
 
-That's it! Start chatting with Copilot and use: *"Remember that..."*
+That's it! Start chatting with Copilot and use any of the tools above.
 
-### Bonus ..
+### Bonus: Quick Start Onboarding
 
-As a convenience, you can run the following prompt in VS Code to get started in the best way:
+Run this prompt in VS Code to set up your persistent memory:
 
->&nbsp;  
->You; */mcp.mode-manager.onboarding*  
->&nbsp;  
+>`/mcp.mode-manager.onboarding`
 
-This will guide you through the onboarding process, set up your persistent memory, and ensure Copilot knows your preferences from the start.
+This guides you through the onboarding process, sets up your memory file, and ensures Copilot knows your preferences from the start.
 
-### For the impatient (and brave) that can't wait for next release ..
+### For the Impatient (Bleeding Edge)
 
-If you add this in to your `mcp.json` it will result in `pipx` download and install the latest directly from github, every time. Always bleeding edge .. 
+Always get the latest from GitHub:
 
 ```json
 {
@@ -127,88 +433,185 @@ If you add this in to your `mcp.json` it will result in `pipx` download and inst
 }
 ```
 
+## Usage Examples
 
-## Under the Hood: How Memory Magic Happens
+### Natural Language Commands
 
-Mode Manager MCP is designed to make memory persistent, context-aware, and 
-easy to manage—without you having to think about the details. Here’s how 
-it works under the hood:
+Talk to Copilot naturally - it understands intent:
 
-### Memory Scopes
+```
+You: "Remember that I like detailed docstrings"
+→ Stores personal memory
 
-- **Personal Memory:**  
-  Stored in a user-specific file (`memory.instructions.md`) in your VS Code prompts directory. This is your private memory—preferences, habits, and facts that follow you across all projects.
+You: "This project uses PostgreSQL. Remember that."
+→ Stores workspace memory (project-specific)
 
-- **Workspace (Team) Memory:**  
-  Stored in a workspace-level file (also `memory.instructions.md`, but in the workspace’s `.github/instructions` directory). This is shared with everyone working in the same repo, so team conventions and onboarding notes are always available.
+You: "For Python, always use type hints"
+→ Stores language-specific memory
 
-- **Language-Specific Memory:**  
-  Stored in files like `memory-python.instructions.md`, `memory-csharp.instructions.md`, etc. These are automatically loaded when you’re working in a particular language, so language tips and conventions are always at hand.
+You: "Show me what chatmodes I have"
+→ Lists all chatmodes
 
-### How Memory is Stored
+You: "Install Beast Mode from the library"
+→ Downloads and installs Beast Mode chatmode
 
-All memory is saved as Markdown files with a YAML frontmatter header, 
-making it both human- and machine-readable. Each entry is timestamped and 
-neatly organized, so you can always see when and what was remembered. You 
-never have to manage these files yourself—Mode Manager MCP automatically 
-creates and updates them as you add new memories.
+You: "My memory file is getting big, can you optimize it?"
+→ Runs AI-powered memory consolidation
+```
 
-### How Memory is Loaded
+### Direct Tool Usage
 
-Here’s the magic: Mode Manager MCP writes and manages all your memory files, 
-but it’s actually the new VS Code Copilot Chat that automatically loads 
-them—every single turn. This deep integration means that, every time you send 
-a message or ask Copilot for help, your user, workspace, and language memories 
-are instantly available to the AI.
+Or use tools directly for precision:
 
-Language-specific memory is even smarter: it’s tied to file types using 
-the `applyTo` property in the YAML frontmatter (for example, `**/*.py` for Python 
-or `**/*.cs` for C#). This means you get the right tips, conventions, and 
-reminders only when you’re working in the relevant language or file type—no clutter, 
-just the context you need, exactly when you need it.
+```python
+# Store memory with explicit scope
+remember(memory_item="Use pytest for all tests", scope="workspace")
 
-You never have to worry about context being lost between messages or sessions; your 
-memory is always active and available. We’re simply leveraging this new, amazing 
-VS Code feature to make your Copilot (and your team) smarter than ever.
+# Create a custom chatmode
+create_chatmode(
+    filename="my-mode.chatmode.md",
+    description="My custom coding assistant",
+    content="You are a helpful coding assistant...",
+    tools=["python", "bash"]
+)
 
-### No Special Syntax Needed
+# Install from library
+install_from_library(name="Beast Mode", type="chatmode")
 
-There’s no need to remember special commands or keywords—just talk naturally. Mode Manager 
-MCP is flexible and understands a wide range of phrasing. You don’t have to say 
-“workspace” to store team memory; it recognizes common alternatives like “project,” 
-“repo,” or even just describing something as a team convention. Whether you’re 
-making a personal note, a team guideline, or a language-specific tip, just say it 
-in your own words—Mode Manager MCP figures out what you want to remember and where it belongs.
+# Optimize memory manually
+optimize_memory(force=True)
+```
 
-## Wait, There’s More: Power Prompts & Custom Modes
+## File Structure & Storage
 
-Context prompting is critical for getting the best results from modern large language models like Copilot. As these models evolve and improve rapidly, so must the prompts and instructions we use with them. That’s why we built this functionality right into Mode Manager MCP—so you can always stay up to date, experiment with new approaches, and make sure your Copilot is as smart and helpful as possible.
->&nbsp;  
->**Want to see what’s available?**  
-> You: *Show me the list of available chatmodes from the library.*  
->
->**Ready to try one?**  
-> You: *Install the 'Beast Mode' chatmode from the library.*  
->&nbsp;  
+### User-Level Files
+```
+~/.vscode/prompts/
+├── memory.instructions.md              # General personal memory
+├── memory-python.instructions.md       # Python-specific memory
+├── memory-javascript.instructions.md   # JavaScript-specific memory
+├── beast-mode.chatmode.md             # Custom chatmode
+└── architect-mode.chatmode.md         # Another chatmode
+```
 
-Memory is just the beginning—Mode Manager MCP also helps you manage your entire Copilot experience with powerful instructions and chatmodes.
+### Workspace-Level Files
+```
+<workspace>/.github/instructions/
+├── memory.instructions.md              # Team memory for this repo
+├── memory-python.instructions.md       # Team Python conventions
+└── onboarding.instructions.md         # Team onboarding notes
+```
 
-- **Instructions:**  
-  Memory is stored as instruction files, but you can create your own instructions for any purpose—personal reminders, team guidelines, or project-specific tips.
+### File Format
 
-- **Chatmodes:**  
-  Switch between different “modes” for Copilot, like “Beast Mode” for deep research and coding, or “Architect Mode” for big-picture thinking with attention to critical details. The right system prompt can transform your Copilot from a generic assistant into a true expert for your current task.
+All files use YAML frontmatter + Markdown:
 
-- **Prompt Library & File Management:**  
-  Access a curated library of professional prompts, and easily create, edit, and organize your own `.chatmode.md` and `.instructions.md` files.
+```markdown
+---
+applyTo: '**/*.py'
+description: Python-specific coding preferences
+lastOptimized: '2025-12-08T23:00:00Z'
+entryCount: 15
+autoOptimize: true
+---
 
+# Python Coding Preferences
 
-A great Copilot experience isn’t just about memory—it’s about having the right context, the right instructions, and the right mode for every situation.
+## Memories
+- **2025-12-08 23:00:** Always use type hints
+- **2025-12-08 23:05:** Prefer dataclasses over regular classes
+- **2025-12-08 23:10:** Use Black for formatting
+```
 
-You have full control over your instructions and chatmodes with easy CLRUD (Create, List, Read, Update, Delete) commands—so you can manage, organize, and evolve your prompts as your needs change. There’s a curated library of high-quality chatmodes and instructions to get you started or inspire your own customizations.
+## How VS Code Loads Your Memory
 
-One of the most powerful features is the ability to update your prompts and instructions directly from the online library. This keeps your setup in sync with the latest improvements, best practices, and new ideas—without losing your own custom tweaks. Stay up to date, collaborate with others, and always have the best Copilot experience possible.
+**The Magic**: VS Code Copilot automatically loads all relevant `.instructions.md` and `.chatmode.md` files **on every chat turn**. You never have to manually activate them!
 
+- **Personal memory**: Always loaded (from `~/.vscode/prompts/`)
+- **Workspace memory**: Loaded when working in that workspace
+- **Language-specific**: Loaded based on `applyTo` pattern (e.g., `**/*.py` for Python files)
+
+This deep integration means your context is **always active** - Copilot remembers you across all conversations and sessions.
+
+## Memory Optimization
+
+As your memory grows, the AI-powered optimizer keeps it efficient:
+
+### Automatic Optimization
+Triggers when:
+- File size exceeds threshold (default: 50KB)
+- Entry count exceeds threshold (default: 20 new entries)
+- Time since last optimization exceeds threshold (default: 7 days)
+
+### What It Does
+1. Analyzes all memory entries
+2. Groups related information
+3. Consolidates duplicate/similar items
+4. Reorganizes for clarity
+5. Creates backup before changes
+6. Updates metadata
+
+### Manual Control
+```bash
+# Check optimization status
+memory_stats()
+
+# Force optimization
+optimize_memory(force=True)
+
+# Configure behavior
+configure_memory_optimization(
+    auto_optimize=True,
+    size_threshold=100000,  # 100KB
+    entry_threshold=30,
+    time_threshold_days=14
+)
+```
+
+## Library System
+
+Access professional prompts from the curated library:
+
+```bash
+# Browse available items
+list_library_items()
+
+# Search for specific items
+search_library(query="python")
+
+# Get details about an item
+get_library_item(name="Beast Mode")
+
+# Install an item
+install_from_library(name="Beast Mode", type="chatmode")
+```
+
+The library is hosted on GitHub and updated regularly with community contributions.
+
+## Advanced Features
+
+### Read-Only Mode
+Run the server in read-only mode for safety:
+```bash
+mode-manager-mcp --read-only
+```
+
+### Custom Library URL
+Use your own library:
+```bash
+mode-manager-mcp --library-url https://example.com/my-library.json
+```
+Or set environment variable:
+```bash
+export MCP_LIBRARY_URL=https://example.com/my-library.json
+```
+
+### Debug Mode
+Enable detailed logging:
+```bash
+mode-manager-mcp --debug
+```
+Logs are written to: `/tmp/mode_manager_logs/mode_manager.log`
 
 ## Contributing
 
@@ -217,3 +620,9 @@ Want to help improve this tool? Check out [CONTRIBUTING.md](CONTRIBUTING.md) for
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
+## Project Links
+
+- **GitHub**: https://github.com/NiclasOlofsson/mode-manager-mcp
+- **Issues**: https://github.com/NiclasOlofsson/mode-manager-mcp/issues
+- **PyPI**: https://pypi.org/project/mode-manager-mcp/
