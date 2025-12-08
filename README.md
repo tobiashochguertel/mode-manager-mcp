@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="remember-new-logo-complete-white.svg">
   <source media="(prefers-color-scheme: light)" srcset="remember-new-logo-complete-black.svg">
-  <img alt="Mode Manager MCP - GitHub Copilot Prompt Management" src="https://raw.githubusercontent.com/NiclasOlofsson/mode-manager-mcp/refs/heads/main/remember-new-logo-complete-black.svg" width="800">
+  <img alt="Mode Manager MCP - Complete Copilot Customization & Memory System" src="https://raw.githubusercontent.com/NiclasOlofsson/mode-manager-mcp/refs/heads/main/remember-new-logo-complete-black.svg" width="800">
 </picture>
 
 
