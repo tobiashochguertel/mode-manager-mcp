@@ -5,8 +5,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mode-manager-mcp"
-version = "0.1.20"
-description = "Mode Manager MCP: Server for managing VS Code .chatmode.md and .instructions.md files (GitHub Copilot prompts)"
+version = "2.0.2"
+description = "Mode Manager MCP: Server for managing VS Code .instructions.md files (GitHub Copilot persistent memory)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -14,11 +14,11 @@ authors = [{ name = "Niclas Olofsson", email = "nicke.olofsson@gmail.com" }]
 keywords = [
     "mcp",
     "vscode",
-    "chatmode",
     "instruction",
     "github-copilot",
     "prompts",
     "mode-manager",
+    "memory",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -36,13 +36,14 @@ dependencies = [
     "pydantic>=2.0.0",
     "typing-extensions",
     "psutil>=7.0.0",
+    "tiktoken>=0.5.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
-    "mypy>=1.0.0",
+    "pyright>=1.1.0",
     "pre-commit>=3.0.0",
     "types-psutil",
     "types-requests",
@@ -70,11 +71,13 @@ packages = ["src/mode_manager_mcp"]
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
-    "mypy>=1.0.0",
+    "pyright>=1.1.0",
+    "ruff>=0.1.0",
     "pre-commit>=3.0.0",
     "types-psutil",
     "types-requests",
     "pydocstringformatter>=0.4.0",
+    "bump-my-version>=0.11.0",
 ]
 
 
@@ -86,20 +89,16 @@ target-version = "py310"
 quote-style = "double"
 indent-style = "space"
 
-[tool.mypy]
-python_version = "3.10"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
+[tool.pyright]
+pythonVersion = "3.10"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownVariableType = false
+reportUnusedFunction = false
+reportUnusedVariable = "warning"
+reportUnnecessaryComparison = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -113,3 +112,17 @@ python_functions = ["test_*"]
 write = true
 style = "pep257"
 strip-whitespaces = true
+
+[tool.bumpversion]
+current_version = "2.0.2"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+commit = true
+tag = true
+tag_name = "v{new_version}"
+message = "chore: bump version to {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""

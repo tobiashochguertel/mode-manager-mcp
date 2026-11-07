@@ -1,8 +1,8 @@
 """
 Mode Manager MCP Server Implementation.
 
-This server provides tools for managing VS Code .chatmode.md and .instructions.md files
-which define custom instructions and tools for GitHub Copilot.
+This server provides tools for managing VS Code .instructions.md files
+which define custom instructions for GitHub Copilot.
 """
 
 import logging
@@ -15,9 +15,7 @@ from fastmcp.server.middleware.logging import LoggingMiddleware
 from fastmcp.server.middleware.rate_limiting import RateLimitingMiddleware
 from fastmcp.server.middleware.timing import TimingMiddleware
 
-from .chatmode_manager import ChatModeManager
 from .instruction_manager import InstructionManager
-from .library_manager import LibraryManager
 from .server_registry import ServerRegistry
 from .tools import register_all_tools
 
@@ -28,14 +26,13 @@ class ModeManagerServer:
     """
     Mode Manager MCP Server.
 
-    Provides tools for managing VS Code .chatmode.md and .instructions.md files.
+    Provides tools for managing VS Code .instructions.md files.
     """
 
-    def __init__(self, library_url: Optional[str] = None, prompts_dir: Optional[str] = None):
+    def __init__(self, prompts_dir: Optional[str] = None):
         """Initialize the server.
 
         Args:
-            library_url: Custom URL for the Mode Manager MCP Library (optional)
             prompts_dir: Custom prompts directory for all managers (optional)
         """
         # FastMCP initialization with recommended arguments
@@ -61,9 +58,8 @@ class ModeManagerServer:
             - Always loaded: VS Code includes your memories in every chat request.
 
             Additional Capabilities:
-            - Manage and organize .chatmode.md and .instructions.md files.
-            - Browse and install curated chatmodes and instructions from the Mode Manager MCP Library.
-            - Refresh files from source while keeping your customizations.
+            - Manage and organize .instructions.md files.
+            - AI-powered memory optimization to consolidate and organize your memories.
 
             Usage Example:
             - Ask Copilot: "Remember that I prefer detailed docstrings and use pytest for testing"
@@ -73,12 +69,7 @@ class ModeManagerServer:
             on_duplicate_prompts="replace",
             include_fastmcp_meta=True,  # Include FastMCP metadata for clients
         )
-        self.chatmode_manager = ChatModeManager(prompts_dir=prompts_dir)
         self.instruction_manager = InstructionManager(prompts_dir=prompts_dir)
-
-        # Allow library URL to be configured via parameter, environment variable, or use default
-        final_library_url = library_url or os.getenv("MCP_LIBRARY_URL") or "https://raw.githubusercontent.com/NiclasOlofsson/mode-manager-mcp/refs/heads/main/library/memory-mode-library.json"
-        self.library_manager = LibraryManager(library_url=final_library_url, prompts_dir=prompts_dir)
 
         self.read_only = os.getenv("MCP_CHATMODE_READ_ONLY", "false").lower() == "true"
 
@@ -92,9 +83,7 @@ class ModeManagerServer:
         registry = ServerRegistry.get_instance()
         registry.initialize(
             app=self.app,
-            chatmode_manager=self.chatmode_manager,
             instruction_manager=self.instruction_manager,
-            library_manager=self.library_manager,
             read_only=self.read_only,
         )
 
@@ -102,7 +91,6 @@ class ModeManagerServer:
         register_all_tools()
 
         logger.info("Mode Manager MCP Server initialized")
-        logger.info(f"Using library URL: {final_library_url}")
         if self.read_only:
             logger.info("Running in READ-ONLY mode")
 
@@ -110,5 +98,5 @@ class ModeManagerServer:
         self.app.run()
 
 
-def create_server(library_url: Optional[str] = None) -> ModeManagerServer:
-    return ModeManagerServer(library_url=library_url)
+def create_server() -> ModeManagerServer:
+    return ModeManagerServer()

@@ -1,6 +1,5 @@
 """Test memory isolation to ensure tests don't write to real directories."""
 
-import os
 from pathlib import Path
 
 import pytest
@@ -24,9 +23,9 @@ async def test_user_memory_isolation(server: ModeManagerServer) -> None:
         # Verify no files were created in real VS Code prompts directory
         real_vscode_dir = Path.home() / "AppData" / "Roaming" / "Code - Insiders" / "User" / "prompts"
         if real_vscode_dir.exists():
-            memory_files = list(real_vscode_dir.glob("memory*.instructions.md"))
             # Should not have created new memory files during test
             # (existing ones from actual usage are OK)
+            pass
 
 
 @pytest.mark.asyncio

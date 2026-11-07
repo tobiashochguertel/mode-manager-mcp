@@ -11,16 +11,15 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
+import tiktoken
 from fastmcp import Context
 
 from .simple_file_ops import (
-    FileOperationError,
-    _is_in_git_repository,
+    is_in_git_repository,
     parse_frontmatter,
     parse_frontmatter_file,
     write_frontmatter_file,
 )
-from .types import MemoryScope
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +45,8 @@ class MemoryOptimizer:
                 "entryCount": frontmatter.get("entryCount", 0),
                 "optimizationVersion": frontmatter.get("optimizationVersion", 0),
                 "autoOptimize": frontmatter.get("autoOptimize", True),  # Default to enabled
-                "sizeThreshold": frontmatter.get("sizeThreshold", 50000),  # 50KB
-                "entryThreshold": frontmatter.get("entryThreshold", 20),  # 20 entries
-                "timeThreshold": frontmatter.get("timeThreshold", 7),  # 7 days
+                "lastOptimizedTokenCount": frontmatter.get("lastOptimizedTokenCount", 0),  # Critical for token growth check
+                "tokenGrowthThreshold": frontmatter.get("tokenGrowthThreshold", 1.20),  # Default 20% growth
             }
 
             return metadata
@@ -61,9 +59,8 @@ class MemoryOptimizer:
                 "entryCount": 0,
                 "optimizationVersion": 0,
                 "autoOptimize": True,
-                "sizeThreshold": 50000,
-                "entryThreshold": 20,
-                "timeThreshold": 7,
+                "lastOptimizedTokenCount": 0,
+                "tokenGrowthThreshold": 1.20,
             }
 
     def _count_memory_entries(self, content: str) -> int:
@@ -96,6 +93,20 @@ class MemoryOptimizer:
 
         return total_count
 
+    def _count_tokens(self, text: str) -> int:
+        """
+        Count tokens in text using tiktoken (cl100k_base encoding).
+
+        This provides accurate token counts for Claude and GPT models.
+        """
+        try:
+            encoding = tiktoken.get_encoding("cl100k_base")
+            return len(encoding.encode(text))
+        except Exception as e:
+            logger.warning(f"Token counting failed, falling back to character estimate: {e}")
+            # Rough fallback: ~4 chars per token
+            return len(text) // 4
+
     def _should_optimize_memory(self, file_path: Path, metadata: Dict[str, Any]) -> Tuple[bool, str]:
         """
         Determine if memory file should be optimized.
@@ -106,46 +117,39 @@ class MemoryOptimizer:
         if not metadata.get("autoOptimize", True):
             return False, "Auto-optimization disabled"
 
-        # File size check
-        file_size = file_path.stat().st_size
-        size_threshold = metadata.get("sizeThreshold", 50000)
-        if file_size > size_threshold:
-            return True, f"File size ({file_size} bytes) exceeds threshold ({size_threshold} bytes)"
-
-        # Entry count check
+        # Token growth check
         try:
-            _, content = parse_frontmatter_file(file_path)
-            current_entries = self._count_memory_entries(content)
-            last_count = metadata.get("entryCount", 0)
-            entry_threshold = metadata.get("entryThreshold", 20)
+            frontmatter, content = parse_frontmatter_file(file_path)
+            # Count tokens in the full file (frontmatter + content)
+            full_content = "---\n"
+            for key, value in frontmatter.items():
+                if isinstance(value, str) and ('"' in value or "'" in value):
+                    full_content += f'{key}: "{value}"\n'
+                else:
+                    full_content += f"{key}: {value}\n"
+            full_content += f"---\n{content}"
+            current_tokens = self._count_tokens(full_content)
 
-            new_entries = current_entries - last_count
-            if new_entries >= entry_threshold:
-                return True, f"New entries ({new_entries}) exceed threshold ({entry_threshold})"
+            # Get last optimization token count
+            last_optimized_tokens = metadata.get("lastOptimizedTokenCount", 0)
+
+            if last_optimized_tokens == 0:
+                # No previous optimization - this is a legacy file
+                return True, f"No previous optimization recorded (current: {current_tokens} tokens)"
+
+            # Check token growth threshold (default 20%)
+            token_growth_threshold = metadata.get("tokenGrowthThreshold", 1.20)
+            threshold_tokens = int(last_optimized_tokens * token_growth_threshold)
+
+            if current_tokens > threshold_tokens:
+                growth_percent = ((current_tokens - last_optimized_tokens) / last_optimized_tokens) * 100
+                return True, f"Token count ({current_tokens}) exceeds threshold ({threshold_tokens}), {growth_percent:.1f}% growth"
 
         except Exception as e:
-            logger.warning(f"Could not count entries: {e}")
+            logger.warning(f"Could not count tokens: {e}")
+            return True, "Token counting failed, triggering optimization"
 
-        # Time-based check
-        last_optimized = metadata.get("lastOptimized")
-        if last_optimized:
-            try:
-                last_opt_time = datetime.datetime.fromisoformat(last_optimized.replace("Z", "+00:00"))
-                time_threshold = metadata.get("timeThreshold", 7)  # days
-                days_since = (datetime.datetime.now(datetime.timezone.utc) - last_opt_time).days
-
-                if days_since >= time_threshold:
-                    return True, f"Days since last optimization ({days_since}) exceed threshold ({time_threshold})"
-
-            except Exception as e:
-                logger.warning(f"Could not parse last optimization time: {e}")
-                # If we can't parse the time, consider it old enough to optimize
-                return True, "Could not determine last optimization time"
-        else:
-            # No last optimization time means this is an existing file without metadata
-            return True, "No previous optimization recorded (legacy file)"
-
-        return False, "No optimization criteria met"
+        return False, "Token growth below threshold"
 
     def _update_metadata(self, file_path: Path, content: Optional[str] = None) -> bool:
         """
@@ -156,8 +160,18 @@ class MemoryOptimizer:
         try:
             frontmatter, body_content = parse_frontmatter_file(file_path)
 
-            # Count current entries
+            # Count current entries and tokens
             entry_count = self._count_memory_entries(body_content)
+
+            # Count tokens in full content
+            full_content = "---\n"
+            for key, value in frontmatter.items():
+                if isinstance(value, str) and ('"' in value or "'" in value):
+                    full_content += f'{key}: "{value}"\n'
+                else:
+                    full_content += f"{key}: {value}\n"
+            full_content += f"---\n{body_content}"
+            current_tokens = self._count_tokens(full_content)
 
             # Update metadata while preserving existing frontmatter
             frontmatter.update(
@@ -165,18 +179,19 @@ class MemoryOptimizer:
                     "lastOptimized": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                     "entryCount": entry_count,
                     "optimizationVersion": frontmatter.get("optimizationVersion", 0) + 1,
+                    "lastOptimizedTokenCount": current_tokens,
                 }
             )
 
             # Set defaults for new metadata fields if they don't exist
             if "autoOptimize" not in frontmatter:
                 frontmatter["autoOptimize"] = True
-            if "sizeThreshold" not in frontmatter:
-                frontmatter["sizeThreshold"] = 50000
-            if "entryThreshold" not in frontmatter:
-                frontmatter["entryThreshold"] = 20
-            if "timeThreshold" not in frontmatter:
-                frontmatter["timeThreshold"] = 7
+            if "tokenGrowthThreshold" not in frontmatter:
+                frontmatter["tokenGrowthThreshold"] = 1.20  # 20% growth
+
+            # Migrate old fields: remove deprecated byte/entry/time thresholds
+            for old_field in ["sizeThreshold", "entryThreshold", "timeThreshold"]:
+                frontmatter.pop(old_field, None)
 
             # Use provided content or keep existing body
             final_content = content if content else body_content
@@ -191,22 +206,47 @@ class MemoryOptimizer:
         """Safely optimize memory content using AI sampling with comprehensive error handling."""
         try:
             response = await ctx.sample(
-                f"""Please optimize this AI memory file by:
-                
-1. **Preserve ALL information** - Do not delete any memories or important details
-2. **Remove duplicates** - Consolidate identical or very similar entries
-3. **Organize by sections** - Group related memories under clear headings:
-   - ## Personal Context (name, location, role, etc.)
-   - ## Professional Context (team, goals, projects, etc.) 
-   - ## Technical Preferences (coding styles, tools, workflows)
-   - ## Communication Preferences (style, feedback preferences)
-   - ## Universal Laws (strict rules that must always be followed)
-   - ## Policies (guidelines and standards)
-   - ## Suggestions/Hints (recommendations and tips)
-   - ## Memories/Facts (chronological events and information)
-4. **Maintain timestamps** - Keep all original timestamps for traceability
-5. **Improve formatting** - Use consistent markdown formatting
-6. **Preserve frontmatter structure** - Keep the YAML header intact
+                f"""Please optimize this AI memory file by following these guidelines:
+
+**CRITICAL RULES:**
+1. **Preserve ALL information** - Never delete memories, facts, or important details
+2. **Maintain all timestamps** - Keep original dates for traceability (format: **YYYY-MM-DD HH:MM**)
+3. **Preserve frontmatter** - Keep the YAML header intact with all metadata
+
+**ORGANIZATION (use this exact order):**
+1. ## Universal Laws - Immutable procedural rules (numbered):
+   - Multi-step workflows and protocols (e.g., "Before X, always do Y")
+   - Mandatory execution sequences (e.g., "run format, typecheck, test in order")
+   - Complex behavioral requirements with conditions
+   - Error prevention mechanisms and safety checks
+   - Cross-cutting requirements that affect multiple areas
+
+2. ## Policies - Standards, constraints, and guidelines:
+   - Tool and technology choices (e.g., "Use X for Y")
+   - File organization and placement rules
+   - Code style and formatting requirements
+   - Simple prohibitions (e.g., "Never commit X")
+   - Best practices and conventions
+
+3. ## Personal Context - Name, location, role, background
+4. ## Professional Context - Company, team, tools, methodology, focus areas
+5. ## Technical Preferences - Languages, stack, IDEs, coding style, problem-solving approach
+6. ## Communication Preferences - Style, information needs, feedback preferences
+7. ## Suggestions/Hints - Recommendations and tips (optional section)
+8. ## Memories/Facts - Organize into logical subsections by topic (e.g., "### Python Standards", "### KQL Guidelines", "### Project-Specific Patterns")
+
+**CONSOLIDATION RULES:**
+- Merge identical or nearly identical entries (preserve newest timestamp)
+- Group related memories under descriptive subsections (### Topic Name)
+- Keep distinct facts separate even if related
+- Consolidate scattered information about the same topic
+
+**FORMATTING STANDARDS:**
+- Use `code blocks` for commands, paths, and technical terms
+- Use **bold** for emphasis on key terms
+- Use bullet points (-) for lists under each section
+- Preserve code blocks in memories (```language ... ```)
+- Ensure consistent indentation and spacing
 
 Return ONLY the optimized content (including frontmatter), nothing else:
 
@@ -260,7 +300,7 @@ Return ONLY the optimized content (including frontmatter), nothing else:
 
             # Read current content
             frontmatter, content = parse_frontmatter_file(file_path)
-            full_content = f"---\n"
+            full_content = "---\n"
             for key, value in frontmatter.items():
                 if isinstance(value, str) and ('"' in value or "'" in value):
                     full_content += f'{key}: "{value}"\n'
@@ -279,31 +319,49 @@ Return ONLY the optimized content (including frontmatter), nothing else:
 
                 # Update metadata in the optimized frontmatter
                 entry_count = self._count_memory_entries(optimized_body)
+
+                # Count tokens in optimized content
+                full_optimized = "---\n"
+                for key, value in optimized_frontmatter.items():
+                    if isinstance(value, str) and ('"' in value or "'" in value):
+                        full_optimized += f'{key}: "{value}"\n'
+                    else:
+                        full_optimized += f"{key}: {value}\n"
+                full_optimized += f"---\n{optimized_body}"
+                optimized_tokens = self._count_tokens(full_optimized)
+
                 optimized_frontmatter.update(
                     {
                         "lastOptimized": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                         "entryCount": entry_count,
                         "optimizationVersion": frontmatter.get("optimizationVersion", 0) + 1,
+                        "lastOptimizedTokenCount": optimized_tokens,
                     }
                 )
 
                 # Preserve user preferences from original frontmatter
-                for key in ["autoOptimize", "sizeThreshold", "entryThreshold", "timeThreshold"]:
-                    if key in frontmatter:
-                        optimized_frontmatter[key] = frontmatter[key]
-                    elif key not in optimized_frontmatter:
-                        # Set sensible defaults for new files
-                        defaults = {"autoOptimize": True, "sizeThreshold": 50000, "entryThreshold": 20, "timeThreshold": 7}
-                        optimized_frontmatter[key] = defaults[key]
+                if "autoOptimize" in frontmatter:
+                    optimized_frontmatter["autoOptimize"] = frontmatter["autoOptimize"]
+                elif "autoOptimize" not in optimized_frontmatter:
+                    optimized_frontmatter["autoOptimize"] = True
+
+                if "tokenGrowthThreshold" in frontmatter:
+                    optimized_frontmatter["tokenGrowthThreshold"] = frontmatter["tokenGrowthThreshold"]
+                elif "tokenGrowthThreshold" not in optimized_frontmatter:
+                    optimized_frontmatter["tokenGrowthThreshold"] = 1.20
+
+                # Remove deprecated fields
+                for old_field in ["sizeThreshold", "entryThreshold", "timeThreshold"]:
+                    optimized_frontmatter.pop(old_field, None)
 
                 # Write optimized content
                 success = write_frontmatter_file(file_path, optimized_frontmatter, optimized_body, create_backup=True)
 
                 # Determine if backup was actually created (skipped for git repos)
-                backup_created = False if _is_in_git_repository(file_path) else success
+                backup_created = False if is_in_git_repository(file_path) else success
 
                 if success:
-                    logger.info(f"Memory optimization completed successfully")
+                    logger.info("Memory optimization completed successfully")
                     return {"status": "optimized", "reason": reason, "method": "ai", "entries_before": metadata.get("entryCount", 0), "entries_after": entry_count, "backup_created": backup_created}
                 else:
                     return {"status": "error", "reason": "Failed to write optimized content"}
@@ -313,7 +371,7 @@ Return ONLY the optimized content (including frontmatter), nothing else:
                 success = self._update_metadata(file_path, content)
 
                 # Determine if backup was actually created (skipped for git repos)
-                backup_created = False if _is_in_git_repository(file_path) else success
+                backup_created = False if is_in_git_repository(file_path) else success
 
                 return {"status": "metadata_updated", "reason": reason, "method": "metadata_only", "ai_available": False, "backup_created": backup_created}
 
@@ -334,19 +392,36 @@ Return ONLY the optimized content (including frontmatter), nothing else:
             current_entries = self._count_memory_entries(content)
             file_size = file_path.stat().st_size
 
+            # Count current tokens
+            full_content = "---\n"
+            for key, value in frontmatter.items():
+                if isinstance(value, str) and ('"' in value or "'" in value):
+                    full_content += f'{key}: "{value}"\n'
+                else:
+                    full_content += f"{key}: {value}\n"
+            full_content += f"---\n{content}"
+            current_tokens = self._count_tokens(full_content)
+
             # Calculate optimization eligibility
             should_optimize, reason = self._should_optimize_memory(file_path, metadata)
+
+            # Calculate token growth
+            last_optimized_tokens = metadata.get("lastOptimizedTokenCount", 0)
+            token_growth = 0.0
+            if last_optimized_tokens > 0:
+                token_growth = ((current_tokens - last_optimized_tokens) / last_optimized_tokens) * 100
 
             return {
                 "file_path": str(file_path),
                 "file_size_bytes": file_size,
                 "current_entries": current_entries,
+                "current_tokens": current_tokens,
                 "last_optimized": metadata.get("lastOptimized"),
+                "last_optimized_tokens": last_optimized_tokens,
+                "token_growth_percent": round(token_growth, 1),
                 "optimization_version": metadata.get("optimizationVersion", 0),
                 "auto_optimize_enabled": metadata.get("autoOptimize", True),
-                "size_threshold": metadata.get("sizeThreshold", 50000),
-                "entry_threshold": metadata.get("entryThreshold", 20),
-                "time_threshold_days": metadata.get("timeThreshold", 7),
+                "token_growth_threshold": metadata.get("tokenGrowthThreshold", 1.20),
                 "optimization_eligible": should_optimize,
                 "optimization_reason": reason,
                 "entries_since_last_optimization": current_entries - metadata.get("entryCount", 0),
