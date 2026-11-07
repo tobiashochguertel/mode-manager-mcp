@@ -50,14 +50,17 @@ uv run pytest --cov
 ### Code Quality
 
 ```bash
-# Format code with Ruff (via uv format)
-uv run pydocstringformatter src tests && uv format
+# Lint code with Ruff
+uv run ruff check src tests
+
+# Format code with Ruff
+uv format
 
 # Check formatting without applying
 uv format --check
 
 # Run type checking
-uv run mypy src tests
+uv run pyright src tests
 
 # Run all quality checks (pre-commit hooks)
 uv run pre-commit run --all-files
@@ -94,10 +97,10 @@ source .venv/bin/activate  # bash
 The project defines several convenient scripts in `pyproject.toml`:
 
 - `uv run pytest` - Run pytest
+- `uv run ruff check src tests` - Lint code with Ruff
 - `uv format --check` - Check code formatting with Ruff (built-in)
-- `uv run mypy src tests` - Run mypy type checking  
+- `uv run pyright src tests` - Run pyright type checking  
 - `uv format` - Format code with Ruff (built-in)
-- `uv run pre-commit run --all-files` - Run pre-commit hooks
 
 ### Running Individual Commands
 
@@ -126,9 +129,10 @@ uv creates and manages a virtual environment (`.venv`) in your project directory
 | Command | Description |
 |---------|-------------|
 | `uv run pytest` | Run all tests with pytest |
+| `uv run ruff check src tests` | Lint code with Ruff |
 | `uv format --check` | Check code formatting (Ruff) |
 | `uv format` | Auto-format code with Ruff |
-| `uv run mypy src tests` | Run mypy type checking |
+| `uv run pyright src tests` | Run pyright type checking |
 | `uv build` | Build wheel and source distribution |
 | `uv run` | Run commands in the project environment |
 | `uv sync` | Sync dependencies (creates .venv) |
@@ -166,10 +170,62 @@ uv creates and manages a virtual environment (`.venv`) in your project directory
 
 - **Bug fixes** - Check the issue tracker
 - **Documentation** - Improve existing docs or add new guides
-- **Features** - New chatmode/instruction management features
-- **Library expansion** - Add more chatmodes/instructions to the library
+- **Features** - New memory management features
 - **Testing** - Improve test coverage
-- **Performance** - Optimize file operations or network requests
+- **Performance** - Optimize file operations
+
+## Release Process
+
+This project uses [bump-my-version](https://github.com/callowayproject/bump-my-version) for version management and automated PyPI releases.
+
+### Creating a Release
+
+1. **Ensure all changes are committed and pushed:**
+   ```bash
+   git status  # should be clean
+   git push
+   ```
+
+2. **Bump the version:**
+   ```bash
+   # For bug fixes (0.1.20 → 0.1.21)
+   uv run bump-my-version bump patch
+   
+   # For new features (0.1.20 → 0.2.0)
+   uv run bump-my-version bump minor
+   
+   # For breaking changes (0.1.20 → 1.0.0)
+   uv run bump-my-version bump major
+   
+   # Or set a specific version
+   uv run bump-my-version bump --new-version 1.0.0
+   ```
+
+3. **Push the version bump and tag:**
+   ```bash
+   git push --follow-tags
+   ```
+
+4. **GitHub Actions will automatically:**
+   - Run quality checks (format, typecheck, tests)
+   - Build the package
+   - Create a GitHub Release with auto-generated release notes
+   - Publish to PyPI
+
+> **Note:** The entire release process is automated via GitHub Actions. Once you push the tag, the CI pipeline handles building, testing, creating the GitHub release with auto-generated notes from commit history, and publishing to PyPI. You don't need to manually create releases or write release notes.
+
+### Version Scheme
+
+We follow [Semantic Versioning](https://semver.org/):
+- **MAJOR** - Breaking changes
+- **MINOR** - New features (backward compatible)
+- **PATCH** - Bug fixes
+
+### What Not to Do
+
+- ❌ Don't manually edit version in `pyproject.toml`
+- ❌ Don't create tags manually
+- ❌ Don't trigger the release workflow manually (it runs automatically on tag push)
 
 ## Code of Conduct
 

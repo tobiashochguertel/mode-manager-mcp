@@ -7,8 +7,8 @@
 
 # Mode Manager MCP - Complete Copilot Customization & Memory System
 
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D)
-[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D&quality=insiders)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mode-manager-mcp%22%5D%7D)
+[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mode-manager-mcp%22%5D%7D&quality=insiders)
 &nbsp;&nbsp;&nbsp;&nbsp;[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
@@ -373,27 +373,61 @@ The MCP server exposes these tools to Copilot and other MCP clients:
 
 *If you don't have `python`, install it from [python.org/downloads](https://www.python.org/downloads/)*
 
-### 1. Install pipx from PyPI
-```bash
-pip install pipx
+Don't have `uv` yet? Install it with: `pip install uv` or see [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+### Option 1: One-Click Install (Easiest)
+
+Click the badge for your VS Code version:
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mode-manager-mcp%22%5D%7D)
+[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22mode-manager-mcp%22%5D%7D&quality=insiders)
+
+That's it! The server will automatically start when you open VS Code.
+
+### Option 2: Manual Configuration
+
+Add this to your `.vscode/mcp.json` or global `mcp.json` file:
+
+```json
+{
+  "servers": {
+    "mode-manager": {
+      "command": "uvx",
+      "args": ["mode-manager-mcp"]
+    }
+  }
+}
 ```
 
 ### 2. Click on the badge for your VS Code
 
-[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Server-0098FF?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D)
-[![Install in VS Code Insiders](https://img.shields.io/badge/VS_Code_Insiders-Install_Server-24bfa5?style=flat-square&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=modemanager&config=%7B%22command%22%3A%22pipx%22%2C%22args%22%3A%5B%22run%22%2C%22mode-manager-mcp%22%5D%7D&quality=insiders)
-
-### .. Or manually add it to your VS Code
-
-Add this to your VS Code MCP settings (`mcp.json`):
+Or if you prefer `pipx`:
 
 ```json
 {
   "servers": {
     "mode-manager": {
       "command": "pipx",
+      "args": ["run", "mode-manager-mcp"]
+    }
+  }
+}
+```
+
+### Option 3: Development / Testing (Latest from GitHub)
+
+For the impatient who want the latest features immediately:
+
+With `uvx`:
+
+```json
+{
+  "servers": {
+    "mode-manager": {
+      "command": "uvx",
       "args": [
-        "run",
+        "--from",
+        "git+https://github.com/NiclasOlofsson/mode-manager-mcp.git",
         "mode-manager-mcp"
       ]
     }
@@ -423,7 +457,6 @@ Always get the latest from GitHub:
       "args": [
         "run",
         "--no-cache",
-        "--system-site-packages",
         "--spec",
         "git+https://github.com/NiclasOlofsson/mode-manager-mcp.git",
         "mode-manager-mcp"
@@ -615,7 +648,9 @@ Logs are written to: `/tmp/mode_manager_logs/mode_manager.log`
 
 ## Contributing
 
-Want to help improve this tool? Check out [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+Want to help make this better? The best contribution you can make is actually using it - your feedback and bug reports are what really drive improvements.
+
+Of course, code contributions are welcome too! Check out [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines. But seriously, just using it and telling us what works (or doesn't) is incredibly valuable.
 
 ## License
 
